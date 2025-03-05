@@ -1,4 +1,7 @@
-![Image](https://imgur.com/fAySWrt.png)
+![Image](https://imgur.com/xpDDsDE.png)
+# Blender Extensions
+https://extensions.blender.org/add-ons/camera-viewer/
+
 # Camera Viewer
 You can preview the camera view directly in the 3D viewport.
 
@@ -11,7 +14,7 @@ You can preview the camera view directly in the 3D viewport.
 # Location
 * View 3D > Header
 
-![Image](https://imgur.com/npkeonI.png)
+![Image](https://imgur.com/kAXzeIH.png)
 
 # Camera Viewer Hotkey
 * Toggle Camera Viewer - 'Alt + F1'
