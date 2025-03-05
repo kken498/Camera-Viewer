@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "camera_viewer"
+version = "1.0.0"
+name = "Camera Viewer"
+tagline = "You can preview the camera view directly in the 3D viewport"
+maintainer = "KEN <kken498@gmail.com>"
+type = "add-on"
+tags = [
+    "3D View", 
+    "User Interface"
+]
+blender_version_min = "4.4.0"
+license = ["SPDX:GPL-3.0-or-later",]
