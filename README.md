@@ -29,6 +29,9 @@ You can preview the camera view directly in the 3D viewport.
 * Reset Quality - 'R'
 * Reset Size - 'S'
 * Snap position to corner - 'Shift + Move to corner'
+* Solid Mode - '1'
+* Material Mode -'2'
+* Rendered Mode - '3'
 
 # Camera Viewer Settings
 ![Image](https://imgur.com/anVOHpN.gif)
