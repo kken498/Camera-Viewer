@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "camera_viewer"
-version = "1.0.0"
+version = "1.0.1"
 name = "Camera Viewer"
 tagline = "You can preview the camera view directly in the 3D viewport"
 maintainer = "KEN <kken498@gmail.com>"

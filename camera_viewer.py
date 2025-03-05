@@ -4,17 +4,25 @@ import blf
 import rna_keymap_ui
 from gpu_extras.batch import batch_for_shader
 from gpu_extras.presets import draw_texture_2d
+from bpy.app.handlers import persistent
 
 dns = bpy.app.driver_namespace
 
-def get_offscreen(self, context):
+def get_offscreen(context):
+	camera_viewer = context.screen.camera_viewer
 	scene = context.scene
 	render = scene.render
 	scale = (render.resolution_y/1080)
-	width = int(render.resolution_x/scale * self.size*self.quality/100)
-	height = int(render.resolution_y/scale * self.size*self.quality/100)			
+	width = int(render.resolution_x/scale * camera_viewer.size*camera_viewer.quality/100)
+	height = int(render.resolution_y/scale * camera_viewer.size*camera_viewer.quality/100)			
 	offscreen = gpu.types.GPUOffScreen(width, height, format='RGBA16')
 	return offscreen
+
+@persistent
+def check_viewer_property(self, context):
+	if bpy.context.screen.camera_viewer.viewer_toggle == True:
+		offscreen = get_offscreen(bpy.context)
+		dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (bpy.context, offscreen), 'WINDOW', 'POST_PIXEL')
 
 def draw_camera_name(context, camera_viewer, camera, x, y, width, height):
 	font_id = 0  # XXX, need to find out how best to get this.
@@ -205,7 +213,7 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 						break
 				space.overlay.show_look_dev = False
 
-			offscreen = get_offscreen(self, context)
+			offscreen = get_offscreen(context)
 
 			dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (context, offscreen), 'WINDOW', 'POST_PIXEL')
 
@@ -221,7 +229,7 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 
 			bpy.types.SpaceView3D.draw_handler_remove(dns["draw_viewer_toggle"], 'WINDOW')
 
-		offscreen = get_offscreen(self, context)
+		offscreen = get_offscreen(context)
 
 		dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (context, offscreen), 'WINDOW', 'POST_PIXEL')
 
@@ -535,7 +543,7 @@ def camera_viewer_header(self, context):
 	else:
 		layout = self.layout
 		row = layout.row(align=True)
-		row.prop(camera_viewer, "viewer_toggle", icon='RESTRICT_VIEW_OFF' if camera_viewer.viewer_toggle else 'RESTRICT_VIEW_ON', text="")
+		row.prop(camera_viewer, "viewer_toggle", icon='VIEW_CAMERA' if camera_viewer.viewer_toggle else 'VIEW_CAMERA_UNSELECTED', text="")
 		sub = row.row(align=True)
 		sub.enabled = bool(bpy.data.screens.get(context.screen.name +' Camera Viewer'))
 		sub.popover(panel="CAMERA_PT_Viewer", text="")
@@ -599,14 +607,7 @@ def register():
 
 	bpy.types.VIEW3D_HT_header.append(camera_viewer_header)
 
-	try:
-
-		offscreen = gpu.types.GPUOffScreen(512, 512, format='RGBA16')
-		
-		dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (bpy.context, offscreen), 'WINDOW', 'POST_PIXEL')
-		
-	except:
-		pass
+	bpy.app.handlers.load_post.append(check_viewer_property)
 
 	add_hotkey()
 
