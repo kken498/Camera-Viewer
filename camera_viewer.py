@@ -114,10 +114,16 @@ def draw_viewer_toggle(context, offscreen):
 	if context.screen.camera_viewer.viewer_toggle == True:
 		camera_viewer = context.screen.camera_viewer
 
-		if camera_viewer.lock_camera and camera_viewer.camera:
-			camera = bpy.data.objects[camera_viewer.camera]
+		if not camera_viewer.active_camera:
+			if camera_viewer.lock_camera and camera_viewer.camera:
+				camera = bpy.data.objects[camera_viewer.camera]
+			else:
+				camera = context.scene.camera
 		else:
-			camera = context.scene.camera
+			if context.active_object.type == 'CAMERA':
+				camera = context.active_object
+			else:
+				return
 
 		if context.scene.render.engine == 'CYCLES' and context.space_data.shading.type in {'RENDERED'} and not camera:
 			return
@@ -235,6 +241,7 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 
 	lock_camera : bpy.props.BoolProperty(default=False)
 	camera : bpy.props.StringProperty(default='Camera')
+	active_camera : bpy.props.BoolProperty(default=False)
 	viewer_toggle : bpy.props.BoolProperty(default=False, update=update_toggle)
 	size : bpy.props.FloatProperty(name = 'References Size', default=1, min = 0.1)
 	x : bpy.props.FloatProperty(name = 'References Position X', default=0)
@@ -399,8 +406,11 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 
 		layout.operator("screen.rest_camera_viewer", icon = "FILE_REFRESH", text = "Rest Viewer")
 		
+		layout.prop(camera_viewer, "active_camera", text="Active Camera Only")
+
 		col = layout.column()
 		row = col.row(heading="Lock Camera")
+		row.active = not camera_viewer.active_camera
 		row.use_property_split = True
 		row.use_property_decorate = False
 		row.prop(camera_viewer, "lock_camera", text="")

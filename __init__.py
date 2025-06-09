@@ -1,4 +1,6 @@
-from . import camera_viewer
+from . import (
+    camera_viewer,
+    )
 
 def register():
     camera_viewer.register()
