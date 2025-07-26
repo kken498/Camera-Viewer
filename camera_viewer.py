@@ -3,7 +3,6 @@ import gpu
 import blf
 import rna_keymap_ui
 from gpu_extras.batch import batch_for_shader
-from gpu_extras.presets import draw_texture_2d
 from bpy.app.handlers import persistent
 
 dns = bpy.app.driver_namespace
@@ -15,8 +14,44 @@ def get_offscreen(context):
 	scale = (render.resolution_y/1080)
 	width = int(render.resolution_x/scale * camera_viewer.size*camera_viewer.quality/100)
 	height = int(render.resolution_y/scale * camera_viewer.size*camera_viewer.quality/100)			
-	offscreen = gpu.types.GPUOffScreen(width, height, format='RGBA16')
+	offscreen = gpu.types.GPUOffScreen(width, height, format='RGBA16F')
 	return offscreen
+
+def get_shader():
+	vert_out = gpu.types.GPUStageInterfaceInfo("my_interface")
+	vert_out.smooth('VEC2', "uv")
+
+	shader_info = gpu.types.GPUShaderCreateInfo()
+
+	shader_info.sampler(0, 'FLOAT_2D', "image")
+	shader_info.vertex_in(0, 'VEC2', "pos")
+	shader_info.vertex_in(1, 'VEC2', "texCoord")
+	shader_info.vertex_out(vert_out)
+
+	shader_info.push_constant('MAT4', "ModelViewProjectionMatrix")
+
+	shader_info.fragment_out(0, 'VEC4', "fragColor")
+
+	shader_info.vertex_source(
+		"void main()"
+		"{"
+		"   uv = texCoord;"
+		"   gl_Position = ModelViewProjectionMatrix * vec4(pos.xy, 0.0, 1.0);"
+		"}"
+	)
+
+	shader_info.fragment_source(
+		"void main()"
+		"{"
+		"  vec4 finalColor = mix(vec4(0.0), texture(image, uv), 1.0);"
+		"  finalColor.rgb = pow(finalColor.rgb, vec3(2.2));"
+		"  fragColor = finalColor;"
+		"}"
+	)
+
+	# Create a shader from the shader info
+	shader = gpu.shader.create_from_info(shader_info)
+	return shader
 
 @persistent
 def check_viewer_property(self, context):
@@ -168,7 +203,7 @@ def draw_viewer_toggle(context, offscreen):
 				context.region,
 				view_matrix,
 				projection_matrix,
-				do_color_management=False)
+				do_color_management=True)
 			
 			if camera_viewer.position == 'Left-Bottom':
 				x = x+20
@@ -183,7 +218,18 @@ def draw_viewer_toggle(context, offscreen):
 				x = (x+20)*-1 + region_width-n_panel-width
 				y = (y+60)*-1 + region_height-height
 
-			draw_texture_2d(offscreen.texture_color, (x, y), width, height)
+			shader = get_shader()
+
+			batch = batch_for_shader(
+				shader, 'TRI_FAN',
+				{
+					"pos": ((x, y), (x+width,y), (x+width, y+height), (x,y+height)),
+					"texCoord": ((0,0), (1,0),(1,1),(0,1)),
+				},
+			)
+
+			shader.uniform_sampler("image", offscreen.texture_color)
+			batch.draw(shader)
 
 			draw_outline(context, x, y, width, height, camera_viewer.border_thickness, camera_viewer.border_color)
 
@@ -504,6 +550,7 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 				col.prop(space.shading, "use_scene_lights_render")
 				col.prop(space.shading, "use_scene_world_render")
 			col.label(text = 'Render Pass')
+			col.separator()
 			col.prop(space.shading, "render_pass", text='')
 
 class CAMERA_VIEWER_OT_AddHotkey(bpy.types.Operator):
