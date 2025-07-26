@@ -9,7 +9,8 @@ You can preview the camera view directly in the 3D viewport.
 * Lock Camera.
 * Preview Position.
 * Allow transformations of the preview.
-* Independent Overlay setting.
+* Independent Overlay settings.
+* Support Color Management.
 
 # Location
 * View 3D > Header
