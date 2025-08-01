@@ -426,7 +426,7 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
         elif type in ('scene_lights_render', 'scene_world_render'):
             gizmo.hide = base or space.shading.type not in {'RENDERED'} or not camera_viewer_ui.use_lighting
         elif type in ('DISABLED', 'CAMERA', 'ALWAYS'):
-            gizmo.hide = base or space.shading.type not in {'RENDERED'} or not camera_viewer_ui.use_compositor or not context.scene.use_nodes
+            gizmo.hide = base or space.shading.type not in {'RENDERED', 'MATERIAL'} or not camera_viewer_ui.use_compositor or not context.scene.use_nodes
         else:
             gizmo.hide = base
 
@@ -958,9 +958,9 @@ class Navigation_Camera_Viewer_OT(bpy.types.Operator):
             elif event.type == 'F':
                 self.move_camera_local(camera, 0, speed*-1, 0)
             elif event.type == "E":
-                camera.location[2] = self.location[2] + 0.01
+                camera.location[2] = self.location[2] + speed
             elif event.type == "Q":
-                camera.location[2] = self.location[2] + 0.01
+                camera.location[2] = self.location[2] - speed
 
         if event.type == 'MOUSEMOVE':
             if event.shift:
@@ -1079,7 +1079,9 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
         layout.label(text='Camera Viewer')
 
         col = layout.column()
-        col.prop(camera_viewer_ui, "use_ui", text="Use Viewer UI")
+        row = col.row()
+        row.prop(camera_viewer, "show_camera_name", text="Show Name")
+        row.prop(camera_viewer_ui, "use_ui", text="Use Viewer UI")
         row = col.row()
         row.active = camera_viewer_ui.use_ui
         row.prop(camera_viewer_ui, "use_lighting", text="Lighting")
@@ -1104,7 +1106,6 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
         row = row.row()
         row.enabled = camera_viewer.lock_camera
         row.prop_search(camera_viewer, "camera", bpy.data, 'objects', text="")
-        col.prop(camera_viewer, "show_camera_name", text="Show Camera name")
         col.prop(camera_viewer, "quality", text="Quality", slider=True)
         col.prop(camera_viewer, "position", text="Position")
         row = col.row(align=True)
