@@ -425,17 +425,15 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
             gizmo.hide = base or space.shading.type not in {'MATERIAL'} or not camera_viewer_ui.use_lighting
         elif type in ('scene_lights_render', 'scene_world_render'):
             gizmo.hide = base or space.shading.type not in {'RENDERED'} or not camera_viewer_ui.use_lighting
-        elif type in {'DISABLED', 'CAMERA', 'ALWAYS'}:
+        elif type in ('DISABLED', 'CAMERA', 'ALWAYS'):
             gizmo.hide = base or space.shading.type not in {'RENDERED'} or not camera_viewer_ui.use_compositor or not context.scene.use_nodes
         else:
             gizmo.hide = base
 
         return gizmo
 
-    def draw_modify(self, context, x, y, width, height, region_width, region_height, tool_panel, n_panel):
-        camera_viewer = context.screen.camera_viewer
+    def draw_modify(self, context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel):
         camera_viewer_ui = context.scene.camera_viewer_ui
-        
         space = self.space
 
         gizmo = self.gizmos[1]
@@ -471,9 +469,7 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
         if 'Right' in camera_viewer.position:
             gizmo.matrix_basis[0][3] = x + 12
 
-    def draw_navigation(self, context, x, y, width, height, region_width, region_height, tool_panel, n_panel):
-        camera_viewer = context.screen.camera_viewer
-        
+    def draw_navigation(self, context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel):
         gizmo = self.gizmos[0]
         if camera_viewer.position == 'Left-Bottom':
             x = x+20
@@ -493,9 +489,7 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
         gizmo.matrix_basis[0][3] = x + width/2
         gizmo.matrix_basis[1][3] = y + height/2
 
-    def draw_space(self, context, x, y, width, height, region_width, region_height, tool_panel, n_panel):
-        camera_viewer = context.screen.camera_viewer
-
+    def draw_space(self, context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel):
         if camera_viewer.position == 'Left-Bottom':
             x = x+20
             y = y+20
@@ -580,15 +574,6 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
         gizmo.target_set_operator("screen.set_camera_viewer_space").type = type
         gizmo.draw_options = {'BACKDROP', 'OUTLINE'}
 
-        gizmo.alpha = 0
-        gizmo.alpha_highlight = 0.1
-
-        # Same as buttons defined in C++ code.
-        gizmo.scale_basis = (80 * 0.35) / 2
-
-        # Show a dragging mouse cursor when hovering the gizmo.
-        gizmo.show_drag = True
-
         # Can also use gz.icon_value to use a custom/generated preview icon.
         if type == 'SOLID':
             icon = 'SHADING_SOLID'
@@ -637,10 +622,9 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
 
     def draw_prepare(self, context):
         camera_viewer = context.screen.camera_viewer
-        if context.screen.camera_viewer.viewer_toggle:
-            if not self.space:
-                self.draw_space_gizmo(context)
-
+        if not self.space and context.screen.camera_viewer.viewer_toggle:
+            self.draw_space_gizmo(context)
+        elif self.space:
             x = camera_viewer.x
             y = camera_viewer.y
             region_width = context.region.width
@@ -653,19 +637,18 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
                 if r.type == 'TOOLS':
                     tool_panel = r.width
                     break
-
+                
             scene = context.scene
-
             render = scene.render
             scale = render.resolution_y/1080
             width = int(render.resolution_x/scale * camera_viewer.size/3.5)
             height = int(render.resolution_y/scale * camera_viewer.size/3.5)
 
-            self.draw_navigation(context, x, y, width, height, region_width, region_height, tool_panel, n_panel)
+            self.draw_navigation(context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel)
 
-            self.draw_modify(context, x, y, width, height, region_width, region_height, tool_panel, n_panel)
+            self.draw_modify(context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel)
 
-            self.draw_space(context, x, y, width, height, region_width, region_height, tool_panel, n_panel)
+            self.draw_space(context, camera_viewer, x, y, width, height, region_width, region_height, tool_panel, n_panel)
 
     def setup(self, context):
         gizmo = self.gizmos.new("GIZMO_GT_button_2d")   #GIZMO_GT_button_2d
