@@ -1,12 +1,20 @@
-from . import (
+from . import(
     camera_viewer,
-    )
+    preference,
+)
+
+module_list = (
+    camera_viewer,
+    preference,
+)
 
 def register():
-    camera_viewer.register()
+    for mod in module_list:
+        mod.register()
 
 def unregister():
-    camera_viewer.unregister()
-
+    for mod in reversed(module_list):
+        mod.unregister()
+        
 if __name__ == "__main__":
     register()
