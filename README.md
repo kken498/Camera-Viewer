@@ -11,7 +11,9 @@ You can preview the camera view directly in the 3D viewport.
 * Allow transformations of the preview.
 * Independent Overlay settings.
 * Support Color Management.
-
+* Navigation mode in the viewer
+* UI buttons for Overlay settings
+  
 # Location
 * View 3D > Header
 
@@ -23,6 +25,8 @@ You can preview the camera view directly in the 3D viewport.
 
 ## Modify Viewer Hotkey
 ![Image](https://imgur.com/NQWhEuk.gif)
+* Confirm - 'Left-Click'
+* Cancel - 'Esc', 'Right-Click'
 * Scale Up - 'Mouse Move Up'
 * Scale Down -'Mouse Move Down'
 * Higher Quality - 'Scroll Up'
@@ -30,6 +34,20 @@ You can preview the camera view directly in the 3D viewport.
 * Reset Quality - 'R'
 * Reset Size - 'S'
 * Snap position to corner - 'Shift + Move to corner'
+* Solid Mode - '1'
+* Material Mode -'2'
+* Rendered Mode - '3'
+
+# Click the viewer to get into navigation mode
+![Image](https://i.imgur.com/M2OLaPW.gif)
+* Confirm - 'Left-Click'
+* Cancel - 'Esc', 'Right-Click'
+* Move - 'W, A, S, D'
+* Up/Down - 'E, Q'
+* Pan - "Shift" + "Mouse Moving"
+* Increase lens focal length - "Scroll up"
+* Decrease lens focal length - "Scroll down"
+* Reset focal length - 'Middle Mouse'
 * Solid Mode - '1'
 * Material Mode -'2'
 * Rendered Mode - '3'
