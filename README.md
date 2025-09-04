@@ -1,6 +1,5 @@
 ![Image](https://imgur.com/xpDDsDE.png)
-# Blender Extensions
-https://extensions.blender.org/add-ons/camera-viewer/
+# [Blender Extensions](https://extensions.blender.org/add-ons/camera-viewer/)
 
 # Camera Viewer
 You can preview the camera view directly in the 3D viewport.
