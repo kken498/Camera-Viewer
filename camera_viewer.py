@@ -559,7 +559,10 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
 		elif type in ('scene_lights_render', 'scene_world_render'):
 			gizmo.hide = base or space.shading.type not in {'RENDERED'} or not camera_viewer_ui.use_lighting
 		elif type in ('DISABLED', 'CAMERA', 'ALWAYS'):
-			gizmo.hide = base or space.shading.type not in {'RENDERED', 'MATERIAL'} or not camera_viewer_ui.use_compositor or not context.scene.use_nodes
+			if bpy.app.version >= (5, 0, 0):
+				gizmo.hide = base or space.shading.type not in {'RENDERED', 'MATERIAL'} or not camera_viewer_ui.use_compositor or not context.scene.compositing_node_group
+			else:
+				gizmo.hide = base or space.shading.type not in {'RENDERED', 'MATERIAL'} or not camera_viewer_ui.use_compositor or not context.scene.use_nodes
 		else:
 			gizmo.hide = base
 
