@@ -244,6 +244,9 @@ def draw_viewer_toggle(context, offscreen):
 			else:
 				return
 			
+		if camera_viewer.disable_enter and context.space_data.region_3d.view_perspective == 'CAMERA':
+			return
+			
 		if camera:
 
 			x = camera_viewer.x
@@ -552,7 +555,7 @@ class Camera_Viewer_UI_Control(bpy.types.GizmoGroup):
 			else:
 				camera = None
 
-		base = not camera_viewer.viewer_toggle or bool(camera_viewer.statuses) or not camera or (context.scene.render.engine == 'CYCLES' and space.shading.type in {'RENDERED'}) or not camera_viewer_ui.use_ui
+		base = not camera_viewer.viewer_toggle or bool(camera_viewer.statuses) or not camera or (context.scene.render.engine == 'CYCLES' and space.shading.type in {'RENDERED'}) or not camera_viewer_ui.use_ui or (camera_viewer.disable_enter and context.space_data.region_3d.view_perspective == 'CAMERA')
 
 		if type in ('scene_lights', 'scene_world'):
 			gizmo.hide = base or space.shading.type not in {'MATERIAL'} or not camera_viewer_ui.use_lighting
@@ -883,11 +886,12 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 
 		dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (context, offscreen), 'WINDOW', 'POST_PIXEL')
 
-	lock_camera : bpy.props.BoolProperty(default=False)
+	lock_camera : bpy.props.BoolProperty(default=False, description = "Lock Viewer Active Camera")
 	camera : bpy.props.StringProperty(default='Camera')
-	active_camera : bpy.props.BoolProperty(default=False)
-	lock_viewer : bpy.props.BoolProperty(default=False)
-	viewer_toggle : bpy.props.BoolProperty(default=False, update=update_toggle)
+	active_camera : bpy.props.BoolProperty(default=False, description = "Viewer Active Camera")
+	disable_enter : bpy.props.BoolProperty(default=True, description = "Disable viewer when entering camera view")
+	lock_viewer : bpy.props.BoolProperty(default=False, description = "Lock Camera to unable navigation mode")
+	viewer_toggle : bpy.props.BoolProperty(default=False, update=update_toggle, description = "Toggle Viewer")
 	size : bpy.props.FloatProperty(name = 'References Size', default=1, min = 0.1)
 	x : bpy.props.FloatProperty(name = 'References Position X', default=0)
 	y : bpy.props.FloatProperty(name = 'References Position Y', default=0)
@@ -896,8 +900,8 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 												 subtype='COLOR',
 												 size=4,  # RGBA values
 												 default=(0.0, 0.0, 0.0, 1.0), min = 0, max = 1)
-	quality : bpy.props.FloatProperty(name = 'Quality', default=20, min = 1, max = 100, subtype="PERCENTAGE", update=update_quality)
-	show_camera_name : bpy.props.BoolProperty(name = 'Show Camera Name', default=True)
+	quality : bpy.props.FloatProperty(name = 'Quality', default=20, min = 1, max = 100, subtype="PERCENTAGE", update=update_quality, description = "Viewer Quality")
+	show_camera_name : bpy.props.BoolProperty(name = 'Show Camera Name', default=True, description = "Show Viewer Camera Name")
 	statuses : bpy.props.StringProperty(name = 'statuses', default='')
 
 	position : bpy.props.EnumProperty(default = "Left-Bottom",
@@ -908,9 +912,9 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 									],)
 
 class Camera_Viewer_UI_Props(bpy.types.PropertyGroup):
-	use_ui : bpy.props.BoolProperty(default=True)
-	use_lighting : bpy.props.BoolProperty(default=True)
-	use_compositor : bpy.props.BoolProperty(default=True)
+	use_ui : bpy.props.BoolProperty(default=True, description = "Use Viewer UI Button")
+	use_lighting : bpy.props.BoolProperty(default=True, description = "Use Viewer UI Lighting Button")
+	use_compositor : bpy.props.BoolProperty(default=True, description = "Use Viewer UI Compositor Button")
 
 class Rest_Camera_Viewer_OT(bpy.types.Operator):
 	bl_idname = "screen.rest_camera_viewer"
@@ -1242,7 +1246,9 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 		layout.label(text='Camera Viewer')
 
 		col = layout.column()
-		col.prop(camera_viewer, "lock_viewer", text="Lock Viewer")
+		row = col.row()
+		row.prop(camera_viewer, "lock_viewer", text="Lock Viewer")
+		row.prop(camera_viewer, "disable_enter", text="Disabled Enter")
 		row = col.row()
 		row.prop(camera_viewer, "show_camera_name", text="Show Name")
 		row.prop(camera_viewer_ui, "use_ui", text="Use Viewer UI")
