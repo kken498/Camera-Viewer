@@ -85,6 +85,9 @@ def check_viewer_property(self, context):
 		dns["draw_viewer_toggle"] = bpy.types.SpaceView3D.draw_handler_add(draw_viewer_toggle, (bpy.context, offscreen), 'WINDOW', 'POST_PIXEL')
 		
 def draw_viewport_outline():
+	if bpy.context.screen.camera_viewer.viewport_outline == False:
+		return
+
 	wdith = bpy.context.region.width-1
 	height = bpy.context.region.height
 	vertices = [
@@ -103,22 +106,21 @@ def draw_viewport_outline():
 	if hasattr(bpy.context.screen, "camera_viewer"):
 		pass
 
-	if bpy.context.screen.camera_viewer.viewer_toggle == False:
-		if bpy.context.screen.is_animation_playing or bpy.context.space_data.region_3d.view_perspective == 'CAMERA':
+	if (bpy.context.screen.camera_viewer.viewer_toggle == False) or (bpy.context.screen.camera_viewer.viewer_toggle and bpy.context.screen.camera_viewer.disable_enter):
+		if bpy.context.screen.is_animation_playing:
+			if bpy.context.screen.camera_viewer.viewer_toggle and bpy.context.space_data.region_3d.view_perspective != 'CAMERA':
+				return
+			if bpy.context.scene.sync_mode == 'FRAME_DROP':
+				shader.uniform_float("color", (1,0.85,0,1))
+			elif bpy.context.scene.sync_mode == 'AUDIO_SYNC':
+				shader.uniform_float("color", (0.25,0.5,1,1))
+			else:
+				shader.uniform_float("color", (1,0.35,0.35,1))
+		elif bpy.context.space_data.region_3d.view_perspective == 'CAMERA':
+			shader.uniform_float("color", (0.486275,1,0.67451,1))
+		batch.draw(shader)
 
-			if bpy.context.screen.is_animation_playing:
-				if bpy.context.scene.sync_mode == 'FRAME_DROP':
-					shader.uniform_float("color", (1,0.85,0,1))
-				elif bpy.context.scene.sync_mode == 'AUDIO_SYNC':
-					shader.uniform_float("color", (0.25,0.5,1,1))
-				else:
-					shader.uniform_float("color", (1,0.35,0.35,1))
-			elif bpy.context.space_data.region_3d.view_perspective == 'CAMERA':
-				shader.uniform_float("color", (0.486275,1,0.67451,1))
-
-			batch.draw(shader)
-
-	if not (bpy.context.screen.is_animation_playing and bpy.context.screen.camera_viewer.viewer_toggle == False):
+	if not (bpy.context.screen.is_animation_playing and (bpy.context.screen.camera_viewer.viewer_toggle == False or bpy.context.screen.camera_viewer.disable_enter)):
 		if bpy.context.object:
 			if bpy.context.scene.tool_settings.use_keyframe_insert_auto == True:
 				shader.uniform_float("color", (0.5,0,0,1))
@@ -855,8 +857,13 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 			if not bpy.data.screens.get(name + ' Camera Viewer'):
 
 				bpy.ops.screen.new()
-
-				bpy.data.screens['Default.001'].name = name + ' Camera Viewer'
+				if bpy.data.screens.get('Default.001'):
+					bpy.data.screens['Default.001'].name = name + ' Camera Viewer'
+				elif bpy.data.screens.get('Layout.001'):
+					bpy.data.screens['Layout.001'].name = name + ' Camera Viewer'
+				else:
+					self.report({'WARNING'}, f"View3D not found, cannot run operator : Current View3D {name}")
+					return
 				
 				context.window.screen=bpy.data.screens[name]
 
@@ -892,6 +899,7 @@ class Camera_Viewer_Props(bpy.types.PropertyGroup):
 	disable_enter : bpy.props.BoolProperty(default=True, description = "Disable viewer when entering camera view")
 	lock_viewer : bpy.props.BoolProperty(default=False, description = "Lock Camera to unable navigation mode")
 	viewer_toggle : bpy.props.BoolProperty(default=False, update=update_toggle, description = "Toggle Viewer")
+	viewport_outline : bpy.props.BoolProperty(default=False, description = "Disable viewer when entering camera view")
 	size : bpy.props.FloatProperty(name = 'References Size', default=1, min = 0.1)
 	x : bpy.props.FloatProperty(name = 'References Position X', default=0)
 	y : bpy.props.FloatProperty(name = 'References Position Y', default=0)
@@ -1248,9 +1256,11 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 		col = layout.column()
 		row = col.row()
 		row.prop(camera_viewer, "lock_viewer", text="Lock Viewer")
-		row.prop(camera_viewer, "disable_enter", text="Disabled Enter")
 		row = col.row()
+		row.prop(camera_viewer, "disable_enter", text="Disabled Enter")
 		row.prop(camera_viewer, "show_camera_name", text="Show Name")
+		row = col.row()
+		row.prop(camera_viewer, "viewport_outline", text="Viewer Outline")
 		row.prop(camera_viewer_ui, "use_ui", text="Use Viewer UI")
 		row = col.row()
 		row.active = camera_viewer_ui.use_ui
@@ -1333,7 +1343,7 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 
 		if space.shading.type in {'WIREFRAME', 'SOLID'}:
 			
-			col.label(text = 'Wire Color')
+			col.label(text = 'Wireframe Color')
 			col.row().prop(space.shading, "wireframe_color_type", expand=True)
 
 		if space.shading.type in {'SOLID'}:
@@ -1347,6 +1357,7 @@ class CAMERA_PT_Viewer(bpy.types.Panel):
 				col.prop(space.shading, "background_color", text='')
 
 			col.label(text = 'Options')
+			col.prop(space.shading, "show_specular_highlight", text="Specular Lighting")
 			row = col.row(align=True)
 			row.prop(space.shading, 'show_xray', text='')
 			sub = row.row()
